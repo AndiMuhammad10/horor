@@ -2,107 +2,130 @@ import streamlit as st
 import random
 import time
 
-st.set_page_config(page_title="LAB 3A - NIGHT SHIFT", page_icon="🧪")
+st.set_page_config(
+    page_title="THE LAST ANALYST",
+    page_icon="☠️",
+    layout="centered"
+)
 
-# STATE INIT
+# =====================
+# INIT STATE
+# =====================
 if "scene" not in st.session_state:
     st.session_state.scene = "intro"
-if "sanity" not in st.session_state:
-    st.session_state.sanity = 100
-if "key" not in st.session_state:
-    st.session_state.key = False
+if "fear" not in st.session_state:
+    st.session_state.fear = 0
+if "door" not in st.session_state:
+    st.session_state.door = False
+if "shadow" not in st.session_state:
+    st.session_state.shadow = False
 
-def sanity_loss(x):
-    st.session_state.sanity -= x
-    if st.session_state.sanity < 0:
-        st.session_state.sanity = 0
+def add_fear(x):
+    st.session_state.fear += x
+    if st.session_state.fear > 100:
+        st.session_state.fear = 100
 
-st.title("LAB 3A — NIGHT SHIFT")
-st.caption("jam 02:13 | gedung kosong | lampu berkedip")
+st.title("☠️ THE LAST ANALYST")
+st.caption("02:47 WIB | Laboratorium Kimia Analisis | Lampu Mati")
 
-st.write(f"Sanity: {st.session_state.sanity}%")
+st.progress(st.session_state.fear)
+st.write("TINGKAT TEROR")
 
+# =====================
 # GAME OVER
-if st.session_state.sanity <= 0:
-    st.error("Kamu kehilangan kendali. Sesuatu berdiri di belakangmu.")
+# =====================
+if st.session_state.fear >= 100:
+    st.error("NAPASMU TERHENTI.")
+    st.write("""
+    Kamu merasa ada tangan dingin menyentuh lehermu.
+    Suara berbisik tepat di telingamu:
+
+    *“Data ini tidak pernah lulus validasi…”*
+    """)
     st.stop()
 
-# SCENES
+# =====================
+# SCENE LOGIC
+# =====================
 if st.session_state.scene == "intro":
     st.write("""
-    Kamu sendirian di laboratorium analisis.
-    Tiba-tiba alat UV-Vis menyala sendiri.
+    Kamu sendirian di laboratorium.
+    Semua orang sudah pulang.
+    Timbangan analitik menyala sendiri.
+    Ada **bayangan berdiri di belakangmu**.
     """)
-    if st.button("Mendekati alat"):
-        sanity_loss(10)
-        st.session_state.scene = "uvvis"
-    if st.button("Keluar ruangan"):
+    if st.button("Menoleh perlahan"):
+        add_fear(20)
+        st.session_state.shadow = True
+        st.session_state.scene = "shadow_seen"
+    if st.button("Lari ke lorong"):
+        add_fear(10)
         st.session_state.scene = "hallway"
 
-elif st.session_state.scene == "uvvis":
+elif st.session_state.scene == "shadow_seen":
     st.write("""
-    Layar UV-Vis menampilkan absorbansi:
-    0.666
-    Padahal tidak ada sampel.
+    Bayangan itu tidak punya wajah.
+    Tapi **ia sedang menatapmu**.
     """)
-    if st.button("Matikan alat"):
+    if st.button("Menyebut namanya"):
+        add_fear(30)
+    if st.button("Menutup mata"):
         st.session_state.scene = "hallway"
-    if st.button("Cek ruang sampel"):
-        sanity_loss(15)
-        st.session_state.key = True
-        st.session_state.scene = "sample_room"
 
 elif st.session_state.scene == "hallway":
     st.write("""
-    Lorong gelap.
-    Bau formalin.
-    Ada suara langkah di belakangmu.
+    Lorong laboratorium.
+    Lampu berkedip.
+    Ada suara **langkah mengikuti langkahmu**.
     """)
-    if st.button("Lari ke gudang"):
-        sanity_loss(20)
-        st.session_state.scene = "storage"
-    if st.button("Masuk ruang QC"):
+    if st.button("Masuk ruang preparasi"):
+        add_fear(15)
+        st.session_state.scene = "prep_room"
+    if st.button("Sembunyi di ruang QC"):
         st.session_state.scene = "qc_room"
 
-elif st.session_state.scene == "sample_room":
+elif st.session_state.scene == "prep_room":
     st.write("""
-    Kamu menemukan botol tanpa label.
-    Di bawahnya tertulis:
-    'Presisi itu bohong.'
+    Ruang preparasi gelap.
+    Bau asam kuat.
+    Di meja ada **jas lab bernoda hitam**.
     """)
-    if st.button("Ambil botol"):
-        sanity_loss(25)
-    if st.button("Pergi"):
-        st.session_state.scene = "hallway"
-
-elif st.session_state.scene == "storage":
-    st.write("""
-    Gudang gelap.
-    Lemari bergerak sendiri.
-    """)
-    if st.button("Buka lemari"):
-        if st.session_state.key:
-            st.success("Kamu menemukan jalan keluar.")
-            st.balloons()
-            st.stop()
-        else:
-            sanity_loss(30)
-    if st.button("Kembali"):
+    if st.button("Sentuh jas lab"):
+        add_fear(25)
+        st.write("*Jas itu MASIH HANGAT.*")
+    if st.button("Ambil kunci di meja"):
+        st.session_state.door = True
+        add_fear(10)
+    if st.button("Keluar"):
         st.session_state.scene = "hallway"
 
 elif st.session_state.scene == "qc_room":
     st.write("""
     Ruang QC.
-    Whiteboard bertuliskan:
-    '%RSD < 2/3 CV Horwitz'
-    Tapi angkanya berubah-ubah.
+    Whiteboard penuh coretan:
+    **%RSD… GAGAL… ULANG…**
+    Tiba-tiba papan itu BERGERAK SENDIRI.
     """)
-    if st.button("Hitung ulang"):
-        if random.random() > 0.5:
-            st.success("Perhitungan benar. Pintu terbuka.")
+    if st.button("Mendekat"):
+        add_fear(30)
+        st.session_state.scene = "board"
+    if st.button("Kabur"):
+        add_fear(10)
+        st.session_state.scene = "hallway"
+
+elif st.session_state.scene == "board":
+    st.write("""
+    Tulisan di papan berubah:
+    **“KAMU TIDAK SENDIRIAN.”**
+    Napas panas tepat di belakang lehermu.
+    """)
+    if st.button("Menoleh"):
+        add_fear(40)
+    if st.button("Lari ke pintu keluar"):
+        if st.session_state.door:
+            st.success("PINTU TERBUKA.")
+            st.write("Kamu berlari keluar. Bayangan itu BERHENTI DI AMBANG PINTU.")
             st.balloons()
             st.stop()
         else:
-            sanity_loss(20)
-    if st.button("Kabur"):
-        st.session_state.scene = "hallway"
+            add_fear(20)
